@@ -1,0 +1,7 @@
+faiss-cpu
+huggingface-hub
+numpy
+pandas
+pymupdf
+python-dotenv
+sentence-transformers

@@ -1,0 +1,66 @@
+# -----------------------------
+# Python
+# -----------------------------
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.so
+*.dll
+
+# Virtual Environments
+.venv/
+venv/
+env/
+ENV/
+
+# Package build artifacts
+build/
+dist/
+*.egg-info/
+*.egg
+
+# Logs
+*.log
+
+# Byte-compiled / cache
+*.bak
+*.swp
+*.swo
+
+# -----------------------------
+# Jupyter / Notebooks
+# -----------------------------
+.ipynb_checkpoints/
+*/.ipynb_checkpoints/*
+
+# -----------------------------
+# VS Code
+# -----------------------------
+.vscode/
+.history/
+*.code-workspace
+
+# -----------------------------
+# Environment Variables
+# -----------------------------
+.env
+.env.*
+*.env
+
+# -----------------------------
+# Data / Models (optional)
+# Uncomment below if you don't want large files in Git
+# -----------------------------
+# data/
+# models/
+# index/
+#*.pkl
+#*.bin
+
+# -----------------------------
+# OS / System Files
+# -----------------------------
+.DS_Store
+Thumbs.db
+desktop.ini
