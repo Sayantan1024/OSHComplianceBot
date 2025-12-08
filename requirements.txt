@@ -5,3 +5,4 @@ pandas
 pymupdf
 python-dotenv
 sentence-transformers
+streamlit
