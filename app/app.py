@@ -1,5 +1,5 @@
-# app/app.py — CLEAN CHAT UI WITH CITATIONS + CLEAR BUTTON + AUTO-CLEAR INPUT
 import os
+import sys
 import ast
 import re
 import streamlit as st
@@ -8,6 +8,12 @@ import numpy as np
 import faiss
 from dotenv import load_dotenv
 from sentence_transformers import SentenceTransformer
+import time
+
+USER_AVATAR = "https://cdn-icons-png.flaticon.com/512/847/847969.png"
+BOT_AVATAR  = "https://cdn-icons-png.flaticon.com/512/4712/4712100.png"
+
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
 from src.inference import init_model, generate_with_context
 from src.retriever import retrieve_top_sections, build_faiss_index
@@ -97,17 +103,29 @@ st.set_page_config(
     layout="centered"
 )
 
+col1, col2 = st.columns([5, 1])   # Wider left, narrow right
+
 # ----------------------------------
 # TITLE
 # ----------------------------------
-st.markdown("""
-<div style="text-align: center;">
-    <h1>🦺 OSH Compliance Chatbot</h1>
-    <p style="font-size: 1.1rem; color: #bbbbbb;">
-        AI Assistant for the Occupational Safety, Health & Working Conditions Code, 2020
-    </p>
-</div>
-""", unsafe_allow_html=True)
+with col1:
+    st.markdown("""
+        <h1 style="margin-bottom: 0; font-size:40px">🦺 OSH Compliance Chatbot</h1>
+        <p style="font-size:16px; margin-top:0; margin-bottom:30px;">
+            AI Assistant for the Occupational Safety, Health & Working Conditions Code, 2020
+        </p>
+    """, unsafe_allow_html=True)
+
+# CLEAR CHAT BUTTON
+with col2:
+    st.markdown(
+        """
+        <div style="height: 30px;"></div>  """,
+        unsafe_allow_html=True
+    )
+    if st.button("🗑 Clear Chat"):
+        st.session_state.messages = []
+        st.rerun()
 
 
 # ----------------------------------
@@ -116,31 +134,51 @@ st.markdown("""
 if "messages" not in st.session_state:
     st.session_state.messages = []
 
-
-# CLEAR CHAT BUTTON
-if st.button("🗑️ Clear Chat"):
-    st.session_state.messages = []
-    st.rerun()
-
+# Add the flag here:
+if "generating_response" not in st.session_state:
+    st.session_state.generating_response = False
 
 # ----------------------------------
 # DISPLAY MESSAGES
 # ----------------------------------
 for msg in st.session_state.messages:
     if msg["role"] == "user":
-        st.markdown(f"""
-        <div style="background-color:#2F2F2F; padding:10px; border-radius:10px; margin-bottom:10px; text-align:right;">
-            <b>You:</b> {msg['content']}
-        </div>
-        """, unsafe_allow_html=True)
+        st.markdown(
+            f"""
+            <div style="display:flex; justify-content:flex-end; margin-bottom:20px;">
+                <div style="
+                    background-color:#2F2F2F;
+                    padding:12px;
+                    border-radius:10px;
+                    max-width:70%;
+                    text-align:right;
+                ">
+                    {msg['content']}
+                </div>
+                <img src="{USER_AVATAR}" width="40" style="margin-left:10px; border-radius:50%;">
+            </div>
+            """,
+            unsafe_allow_html=True
+        )
 
     else:
-        st.markdown(f"""
-        <div style="background-color:#1E1E1E; padding:10px; border-radius:10px; margin-bottom:10px;">
-            <b>Bot:</b> {msg['content']}
-        </div>
-        """, unsafe_allow_html=True)
-
+        st.markdown(
+            f"""
+            <div style="display:flex; align-items:flex-start; margin-bottom:20px;">
+                <img src="{BOT_AVATAR}" width="40" style="margin-right:15px; margin-top:5px; border-radius:50%; align-self:flex-start;">
+                <div style="
+                    background-color:#1E1E1E;
+                    padding:16px;
+                    border-radius:10px;
+                    max-width:80%;
+                ">
+                    {msg['content']}
+                </div>
+            </div>
+            """,
+            unsafe_allow_html=True
+        )
+    
         # Show citations
         if "citations" in msg:
             st.markdown(f"🔍 **Cited Sections:** {', '.join(msg['citations'])}")
@@ -163,12 +201,13 @@ def submit():
 # ----------------------------------
 # INPUT BOX
 # ----------------------------------
-st.text_input(
-    "Ask your OSH Code question:",
-    placeholder="Type your question...",
-    key="new_input",
-    on_change=submit
-)
+if not st.session_state.generating_response:
+    st.text_input(
+        "Ask your OSH Code question:",
+        placeholder="Type your question...",
+        key="new_input",
+        on_change=submit
+    )
 
 # ----------------------------------
 # PROCESS USER QUERY
@@ -176,17 +215,55 @@ st.text_input(
 if "pending_user_msg" in st.session_state and st.session_state["pending_user_msg"]:
     user_input = st.session_state["pending_user_msg"]
 
-    # clear
-    st.session_state["pending_user_msg"] = ""
-
-    # Save user message
+    # 1. Save user message and set the flag
     st.session_state.messages.append({"role": "user", "content": user_input})
+    st.session_state["pending_user_msg"] = "" 
+    st.session_state.generating_response = True  # <--- SET FLAG TO TRUE
 
-    # Answer
+    # 2. Rerun to hide the input box and display user message
+    st.rerun()
+
+if st.session_state.generating_response:
+    # Find the last user message to process
+    user_input = st.session_state.messages[-1]["content"]
+
+    # Generate answer (this may take time)
     with st.spinner("Thinking..."):
         answer, context_list, citations = answer_with_citations(user_input)
 
-    # Save bot response
+    # STREAMING: show incremental tokens into a placeholder
+    # Before starting the streaming loop:
+    placeholder = st.empty()
+    streamed_text = ""
+    typing_delay = 0.03 # You can adjust this
+
+    # --- NEW STREAMING LOOP ---
+    for char in answer:
+        streamed_text += char
+
+        if char.isspace() or char in '.,:;?!':
+            
+            placeholder.markdown(
+                f"""
+                <div style="display:flex; align-items:flex-start; margin-bottom:20px;">
+                    <img src="{BOT_AVATAR}" width="40" style="margin-right:15px; margin-top:5px; border-radius:50%; align-self:flex-start;">
+                    <div style="
+                        background-color:#1E1E1E;
+                        padding:16px;
+                        border-radius:10px;
+                        max-width:80%;
+                    ">
+                        {streamed_text}<span style="opacity:0.8;">▌</span>
+                    </div>
+                </div>
+                """,
+                unsafe_allow_html=True
+            )
+
+            time.sleep(typing_delay)
+
+    placeholder.empty()
+
     st.session_state.messages.append({
         "role": "assistant",
         "content": answer,
@@ -194,6 +271,8 @@ if "pending_user_msg" in st.session_state and st.session_state["pending_user_msg
         "citations": citations
     })
 
+    st.session_state.generating_response = False
+    
     st.rerun()
 
 # ----------------------------------

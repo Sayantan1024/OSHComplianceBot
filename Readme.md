@@ -51,6 +51,8 @@ OSHComplianceBot/
 └── requirements.txt
 ```
 
+---
+
 ## ⚙️ **Tech Stack**
 
 ### **Backend (AI + Retrieval)**
@@ -62,7 +64,6 @@ OSHComplianceBot/
 | PDF Processing | **PyMuPDF (fitz)** | Extract text from OSH PDF |
 | Evaluation | **scikit-learn** | Confusion Matrix & accuracy metrics |
 
----
 
 ### **Frontend**
 | Component | Technology |
@@ -94,14 +95,14 @@ Streamlit UI displays:
 
 
 
-## 🤖 **Chatbot Capabilities**
+## 🤖 **Chatbot Capabilities**:
 
-✔ Understands natural language
-✔ Retrieves the most relevant OSH sections
-✔ Provides citations (Section 12, Section 23)
-✔ Shows full context used
-✔ Never hallucinates (due to strict RAG prompt)
-✔ Clean ChatGPT-style UI
+✔ Understands natural language <br>
+✔ Retrieves the most relevant OSH sections <br>
+✔ Provides citations (Section 12, Section 23) <br>
+✔ Shows full context used <br>
+✔ Never hallucinates (due to strict RAG prompt) <br>
+✔ Clean ChatGPT-style UI <br>
 
 ---
 
@@ -109,7 +110,7 @@ Streamlit UI displays:
 
 1. Clone the repo
 ```bash
-git clone https://github.com/USERNAME/OSHComplianceBot.git
+git clone https://github.com/Sayantan1024/OSHComplianceBot.git
 cd OSHComplianceBot
 ```
 
@@ -124,7 +125,7 @@ python -m venv .venv
 pip install -r requirements.txt
 ```
 
-4. Add HuggingFace Token
+4. Add HuggingFace Token in .env
 ```bash
 HF_TOKEN=hf_xxxxxxx
 ```
@@ -138,9 +139,7 @@ streamlit run app/app.py
 
 ### 🎯 Future Enhancements
 
-- Streaming token responses (typing effect)
 - Section summarization
 - Voice input
 - Admin dashboard for analytics
-- Fine-tuned domain-specific LLM
 - Chat session export (PDF)
