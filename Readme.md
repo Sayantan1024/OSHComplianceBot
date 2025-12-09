@@ -1,4 +1,4 @@
-# 🦺 AI-Powered OSH Compliance Chatbot  
+# 🦺 O.S.C.A.R (Occupational Safety Compliance & Regulation)
 ### **Retrieval-Augmented Generation (RAG) System for the Occupational Safety, Health & Working Conditions Code, 2020**
 
 This project is an **AI-powered assistive chatbot** designed to interpret and answer questions based on the **Occupational Safety, Health and Working Conditions (OSH) Code, 2020**.  

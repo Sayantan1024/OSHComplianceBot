@@ -98,7 +98,7 @@ def answer_with_citations(query, top_k=3):
 # PAGE SETTINGS
 # ----------------------------------
 st.set_page_config(
-    page_title="OSH Compliance RAG Chatbot",
+    page_title="OSH Compliance Chatbot",
     page_icon="🦺",
     layout="centered"
 )
@@ -110,8 +110,9 @@ col1, col2 = st.columns([5, 1])   # Wider left, narrow right
 # ----------------------------------
 with col1:
     st.markdown("""
-        <h1 style="margin-bottom: 0; font-size:40px">🦺 OSH Compliance Chatbot</h1>
+        <h1 style="margin-bottom: 0; font-size:40px">🦺 O.S.C.A.R.</h1>
         <p style="font-size:16px; margin-top:0; margin-bottom:30px;">
+            Occupational Safety Compliance & Regulation <br> 
             AI Assistant for the Occupational Safety, Health & Working Conditions Code, 2020
         </p>
     """, unsafe_allow_html=True)
@@ -195,7 +196,7 @@ for msg in st.session_state.messages:
 # ----------------------------------
 def submit():
     st.session_state["pending_user_msg"] = st.session_state["new_input"]
-    st.session_state["new_input"] = ""   # safe inside callback
+    st.session_state["new_input"] = ""
 
 
 # ----------------------------------
@@ -215,27 +216,21 @@ if not st.session_state.generating_response:
 if "pending_user_msg" in st.session_state and st.session_state["pending_user_msg"]:
     user_input = st.session_state["pending_user_msg"]
 
-    # 1. Save user message and set the flag
     st.session_state.messages.append({"role": "user", "content": user_input})
     st.session_state["pending_user_msg"] = "" 
-    st.session_state.generating_response = True  # <--- SET FLAG TO TRUE
+    st.session_state.generating_response = True  
 
-    # 2. Rerun to hide the input box and display user message
     st.rerun()
 
 if st.session_state.generating_response:
-    # Find the last user message to process
     user_input = st.session_state.messages[-1]["content"]
 
-    # Generate answer (this may take time)
     with st.spinner("Thinking..."):
         answer, context_list, citations = answer_with_citations(user_input)
 
-    # STREAMING: show incremental tokens into a placeholder
-    # Before starting the streaming loop:
     placeholder = st.empty()
     streamed_text = ""
-    typing_delay = 0.03 # You can adjust this
+    typing_delay = 0.03
 
     # --- NEW STREAMING LOOP ---
     for char in answer:
@@ -272,7 +267,7 @@ if st.session_state.generating_response:
     })
 
     st.session_state.generating_response = False
-    
+
     st.rerun()
 
 # ----------------------------------
@@ -281,7 +276,6 @@ if st.session_state.generating_response:
 st.markdown("""
 <hr>
 <div style="text-align:center; color:#777;">
-    Built using RAG (FAISS + MiniLM + Llama-3)<br>
-    By: Sayantan Saha & Team
+    Built using RAG (FAISS + MiniLM + Llama-3)
 </div>
 """, unsafe_allow_html=True)
