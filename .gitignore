@@ -64,3 +64,8 @@ dist/
 .DS_Store
 Thumbs.db
 desktop.ini
+
+
+#.toml secrets file 
+.streamlit
+secrets.toml

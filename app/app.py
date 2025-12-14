@@ -20,6 +20,18 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 from src.inference import init_model, generate_with_context
 from src.retriever import retrieve_top_sections, build_faiss_index
 
+load_dotenv()
+if "hf_client" not in st.session_state:
+    try:
+        token = st.secrets["HF_TOKEN"]
+    except Exception:
+        token= os.getenv("HF_TOKEN")  # local fallback only
+
+    if not token:
+        st.error("HF_TOKEN not found. Please configure Streamlit secrets.")
+        st.stop()
+
+    init_model(token)
 
 # ----------------------------------
 # Helper to extract Section numbers
@@ -52,13 +64,6 @@ def cosine_similarity(a, b):
 
 @st.cache_resource
 def init_all():
-    load_dotenv()
-    token = os.getenv("HF_TOKEN")
-    if not token:
-        raise RuntimeError("HF_TOKEN not set in .env")
-
-    init_model(token)
-
     CSV_PATH = "data/processed/osh_sections_with_vectors.csv"
     df = pd.read_csv(CSV_PATH)
 
