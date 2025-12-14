@@ -11,7 +11,7 @@ def init_model(token, model_id="meta-llama/Meta-Llama-3-8B-Instruct"):
     Initialize the Llama model once and store inside Streamlit session_state.
     """
     if "hf_client" not in st.session_state:
-        st.session_state["hf_client"] = InferenceClient(model=model_id, token=token)
+        st.session_state.hf_client = InferenceClient(model=model_id, token=token)
     print("HF client initialized.")
 
 
@@ -19,10 +19,10 @@ def generate_with_context(query, context, model_id="meta-llama/Meta-Llama-3-8B-I
     """
     Generate answer grounded in context using chat_completion.
     """
+    if "hf_client" not in st.session_state:
+        raise RuntimeError("HF client not initialized. Call init_model() first.")
+    
     client = st.session_state.hf_client
-
-    if client is None:
-        raise RuntimeError("Model not initialized. Call init_model(token) first.")
 
     messages = [
         {"role": "system", "content": (
