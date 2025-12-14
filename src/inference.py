@@ -2,15 +2,16 @@ import streamlit as st
 from huggingface_hub import InferenceClient
 
 # Ensure persistent client storage
-if "hf_client" not in st.session_state:
-    st.session_state["hf_client"] = None
+# if "hf_client" not in st.session_state:
+#     st.session_state["hf_client"] = None
 
 
 def init_model(token, model_id="meta-llama/Meta-Llama-3-8B-Instruct"):
     """
     Initialize the Llama model once and store inside Streamlit session_state.
     """
-    st.session_state["hf_client"] = InferenceClient(model=model_id, token=token)
+    if "hf_client" not in st.session_state:
+        st.session_state["hf_client"] = InferenceClient(model=model_id, token=token)
     print("HF client initialized.")
 
 
