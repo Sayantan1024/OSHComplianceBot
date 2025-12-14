@@ -9,6 +9,8 @@ import faiss
 from dotenv import load_dotenv
 from sentence_transformers import SentenceTransformer
 import time
+from numpy.linalg import norm
+
 
 USER_AVATAR = "https://cdn-icons-png.flaticon.com/512/847/847969.png"
 BOT_AVATAR  = "https://cdn-icons-png.flaticon.com/512/4712/4712100.png"
@@ -43,6 +45,11 @@ def extract_section_number(text):
 # ----------------------------------
 # Initialize all components (cached)
 # ----------------------------------
+
+def cosine_similarity(a, b):
+    return np.dot(a, b) / (norm(a) * norm(b))
+
+
 @st.cache_resource
 def init_all():
     load_dotenv()
@@ -67,31 +74,82 @@ def init_all():
     index = faiss.IndexFlatL2(vecs.shape[1])
     index.add(vecs)
 
-    return df, embedder, index
+    corpus_vectors = np.array(df["vector_embedding"].tolist())
+    corpus_centroid = corpus_vectors.mean(axis=0)
 
 
-df, embedder, index = init_all()
+    return df, embedder, index, corpus_centroid
+
+
+df, embedder, index, corpus_centroid = init_all()
 
 
 # ----------------------------------
 # Retrieval + Generation with Citations
 # ----------------------------------
+
+def is_refusal(answer: str) -> bool:
+    refusal_patterns = [
+        r"^i can[’']?t provide information on",
+        r"^i cannot provide information on",
+        r"^this question is outside",
+        r"^i am unable to help with",
+        r"^this is not covered under",
+        r"^please provide the term you would like to have defined",
+    ]
+    answer = answer.strip().lower()
+    return any(re.match(pat, answer) for pat in refusal_patterns)
+
+
+def is_osh_related(query, embedder, corpus_centroid, threshold=0.30):
+    q_vec = embedder.encode(query)
+    sim = cosine_similarity(q_vec, corpus_centroid)
+    return sim >= threshold
+
+def is_greeting(query):
+    return bool(re.match(
+        r"^(hi|hello|hey|good morning|good evening)\b",
+        query.strip().lower()
+    ))
+
+def is_identity_query(query: str) -> bool:
+    return bool(re.match(
+        r"^(who\s+are\s+you|what\s+is\s+your\s+name|what\s+are\s+you|introduce\s+yourself)\b",
+        query.strip().lower()
+    ))
+
+OSCAR_IDENTITY_RESPONSE = (
+    "I am 𝐎.𝐒.𝐂.𝐀.𝐑. (Occupational Safety Compliance & Regulation) Chatbot, trained to answer questions based on the Occupational Safety, Health and Working Conditions Code, 2020. How may I assist you today?"
+)
+
 def answer_with_citations(query, top_k=3):
-    # Retrieve sections
-    top_sections = retrieve_top_sections(query, embedder, df, index, k=top_k)
+    if is_greeting(query) or is_identity_query(query):
+        return OSCAR_IDENTITY_RESPONSE, [], []
+    
+    if not is_osh_related(query, embedder, corpus_centroid):
+        answer = generate_with_context(query, context="")
+        return answer, [], []
+    
+    answer = generate_with_context(query, context="")
+
+    if is_refusal(answer):
+        return answer, [], []
+    
+    top_sections = retrieve_top_sections(
+        query, embedder, df, index, k=top_k
+    )
 
     citations = []
     for section_text in top_sections:
         sec = extract_section_number(section_text)
         citations.append(sec)
 
-    # Combine context
     context = "\n\n---\n\n".join(top_sections)
 
-    # Generate answer
     answer = generate_with_context(query, context)
 
     return answer, top_sections, citations
+
 
 
 # ----------------------------------
@@ -259,12 +317,16 @@ if st.session_state.generating_response:
 
     placeholder.empty()
 
-    st.session_state.messages.append({
-        "role": "assistant",
-        "content": answer,
-        "context": context_list,
-        "citations": citations
-    })
+    msg = {
+    "role": "assistant",
+    "content": answer
+    }
+    if context_list:
+        msg["context"] = context_list
+    if citations:
+        msg["citations"] = citations
+
+    st.session_state.messages.append(msg)
 
     st.session_state.generating_response = False
 

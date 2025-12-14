@@ -6,3 +6,6 @@ pymupdf
 python-dotenv
 sentence-transformers
 streamlit
+scikit-learn
+matplotlib
+seaborn
