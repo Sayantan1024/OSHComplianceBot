@@ -5,8 +5,8 @@ pandas
 pymupdf
 python-dotenv
 sentence-transformers
-streamlit
+streamlit>=1.30.0
 scikit-learn
 matplotlib
 seaborn
-altair<5
+altair>=5
