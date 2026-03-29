@@ -9,3 +9,4 @@ streamlit
 scikit-learn
 matplotlib
 seaborn
+altair<5
