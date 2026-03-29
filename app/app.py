@@ -20,6 +20,12 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 from src.inference import init_model, generate_with_context
 from src.retriever import retrieve_top_sections, build_faiss_index
 
+st.set_page_config(
+    page_title="OSH Compliance Chatbot",
+    page_icon="🦺",
+    layout="centered"
+)
+
 load_dotenv()
 if "hf_client" not in st.session_state:
     try:
@@ -160,11 +166,7 @@ def answer_with_citations(query, top_k=3):
 # ----------------------------------
 # PAGE SETTINGS
 # ----------------------------------
-st.set_page_config(
-    page_title="OSH Compliance Chatbot",
-    page_icon="🦺",
-    layout="centered"
-)
+
 
 col1, col2 = st.columns([5, 1])   # Wider left, narrow right
 
