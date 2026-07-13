@@ -70,22 +70,22 @@ def cosine_similarity(a, b):
 
 @st.cache_resource
 def init_all():
-    CSV_PATH = "data/processed/osh_sections_with_vectors.csv"
+    CSV_PATH = "data/processed/osh_sections_multilingual_(1)_vectors.csv"
     df = pd.read_csv(CSV_PATH)
 
     # Parse vector embeddings if stored as string
-    df["vector_embedding"] = df["vector_embedding"].apply(
+    df["embedding"] = df["embedding"].apply(
         lambda x: ast.literal_eval(x) if isinstance(x, str) else x
     )
 
-    embedder = SentenceTransformer("all-MiniLM-L6-v2")
+    embedder = SentenceTransformer("l3cube-pune/indic-sentence-similarity-sbert")
 
     # Build FAISS index
-    vecs = np.array(df["vector_embedding"].tolist()).astype("float32")
+    vecs = np.array(df["embedding"].tolist()).astype("float32")
     index = faiss.IndexFlatL2(vecs.shape[1])
     index.add(vecs)
 
-    corpus_vectors = np.array(df["vector_embedding"].tolist())
+    corpus_vectors = np.array(df["embedding"].tolist())
     corpus_centroid = corpus_vectors.mean(axis=0)
 
 
@@ -138,14 +138,8 @@ def answer_with_citations(query, top_k=3):
         return OSCAR_IDENTITY_RESPONSE, [], []
     
     if not is_osh_related(query, embedder, corpus_centroid):
-        answer = generate_with_context(query, context="")
-        return answer, [], []
-    
-    answer = generate_with_context(query, context="")
+        return "I am sorry, I can only assist with questions directly related to the Occupational Safety, Health and Working Conditions Code, 2020.", [], []
 
-    if is_refusal(answer):
-        return answer, [], []
-    
     top_sections = retrieve_top_sections(
         query, embedder, df, index, k=top_k
     )
@@ -159,6 +153,9 @@ def answer_with_citations(query, top_k=3):
 
     answer = generate_with_context(query, context)
 
+    if is_refusal(answer):
+        return answer, [], []
+    
     return answer, top_sections, citations
 
 

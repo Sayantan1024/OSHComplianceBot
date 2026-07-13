@@ -8,7 +8,7 @@ def build_faiss_index(df):
     """
     Build FAISS index from df['vector_embedding'].
     """
-    vectors = np.array(df["vector_embedding"].tolist()).astype("float32")
+    vectors = np.array(df["embedding"].tolist()).astype("float32")
     index = faiss.IndexFlatL2(vectors.shape[1])
     index.add(vectors)
     return index
